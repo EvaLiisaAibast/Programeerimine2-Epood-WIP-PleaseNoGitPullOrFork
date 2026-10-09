@@ -13,6 +13,21 @@ namespace KooliProjekt.Application.Data
         {
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var property in entityType.GetProperties())
+                {
+                    if (property.ClrType == typeof(decimal) || property.ClrType == typeof(decimal?))
+                    {
+                        property.SetPrecision(18);
+                        property.SetScale(2);
+                    }
+                }
+            }
+        }
+
         public DbSet<Customer> Customers { get; set; }
 
         public DbSet<Address> Addresses { get; set; }
@@ -27,7 +42,7 @@ namespace KooliProjekt.Application.Data
 
         public DbSet<Review> Reviews { get; set; }
 
-        public DbSet<ReviewResponse> ReviewResponses { get; set; }
+        public DbSet<ReviewResponse> ReviewResponses   { get; set; }
 
         public DbSet<ReviewImage> ReviewImages { get; set; }
 
