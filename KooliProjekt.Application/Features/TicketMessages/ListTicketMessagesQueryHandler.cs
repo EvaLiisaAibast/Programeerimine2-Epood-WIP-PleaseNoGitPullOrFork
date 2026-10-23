@@ -1,14 +1,16 @@
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace KooliProjekt.Application.Features.TicketMessages
 {
-    public class ListTicketMessagesQueryHandler : IRequestHandler<ListTicketMessagesQuery, IEnumerable<TicketMessage>>
+    public class ListTicketMessagesQueryHandler : IRequestHandler<ListTicketMessagesQuery, OperationResult<PagedResult<TicketMessageListItemDto>>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -17,11 +19,23 @@ namespace KooliProjekt.Application.Features.TicketMessages
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<TicketMessage>> Handle(ListTicketMessagesQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<PagedResult<TicketMessageListItemDto>>> Handle(ListTicketMessagesQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.TicketMessages.ToListAsync(cancellationToken);
+            var response = new OperationResult<PagedResult<TicketMessageListItemDto>>();
 
-            return result;
+            response.Value = await _dbContext.TicketMessages
+                .AsNoTracking()
+                .OrderByDescending(x => x.Id)
+                .Select(x => new TicketMessageListItemDto
+                {
+                    Id = x.Id,
+                    TicketSubject = _dbContext.SupportTickets.Where(t => t.Id == x.TicketId).Select(t => t.Subject).FirstOrDefault(),
+                    SenderType = x.SenderType,
+                    CreatedAt = x.CreatedAt,
+                })
+                .GetPagedAsync(request.Page, request.PageSize);
+
+            return response;
         }
     }
 }

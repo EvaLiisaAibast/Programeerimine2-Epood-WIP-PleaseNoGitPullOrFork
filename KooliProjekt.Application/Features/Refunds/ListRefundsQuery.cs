@@ -1,11 +1,13 @@
-using System.Collections.Generic;
-using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-
 
 namespace KooliProjekt.Application.Features.Refunds
 {
-    public class ListRefundsQuery : IRequest<IEnumerable<Refund>>
+    public class ListRefundsQuery : IRequest<OperationResult<PagedResult<RefundListItemDto>>>
     {
+        public int Page { get; set; }
+        public int PageSize { get; set; }
     }
 }

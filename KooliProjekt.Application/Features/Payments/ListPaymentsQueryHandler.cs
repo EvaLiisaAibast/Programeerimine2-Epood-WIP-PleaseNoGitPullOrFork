@@ -1,14 +1,16 @@
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace KooliProjekt.Application.Features.Payments
 {
-    public class ListPaymentsQueryHandler : IRequestHandler<ListPaymentsQuery, IEnumerable<Payment>>
+    public class ListPaymentsQueryHandler : IRequestHandler<ListPaymentsQuery, OperationResult<PagedResult<PaymentListItemDto>>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -17,11 +19,25 @@ namespace KooliProjekt.Application.Features.Payments
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<Payment>> Handle(ListPaymentsQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<PagedResult<PaymentListItemDto>>> Handle(ListPaymentsQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.Payments.ToListAsync(cancellationToken);
+            var response = new OperationResult<PagedResult<PaymentListItemDto>>();
 
-            return result;
+            response.Value = await _dbContext.Payments
+                .AsNoTracking()
+                .OrderByDescending(x => x.Id)
+                .Select(x => new PaymentListItemDto
+                {
+                    Id = x.Id,
+                    OrderNumber = _dbContext.Orders.Where(t => t.Id == x.OrderId).Select(t => t.OrderNumber).FirstOrDefault(),
+                    Method = x.Method,
+                    Status = x.Status,
+                    Amount = x.Amount,
+                    CreatedAt = x.CreatedAt,
+                })
+                .GetPagedAsync(request.Page, request.PageSize);
+
+            return response;
         }
     }
 }

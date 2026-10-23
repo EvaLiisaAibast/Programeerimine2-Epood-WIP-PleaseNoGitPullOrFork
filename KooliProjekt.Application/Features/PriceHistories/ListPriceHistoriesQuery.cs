@@ -1,11 +1,13 @@
-using System.Collections.Generic;
-using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-
 
 namespace KooliProjekt.Application.Features.PriceHistories
 {
-    public class ListPriceHistoriesQuery : IRequest<IEnumerable<PriceHistory>>
+    public class ListPriceHistoriesQuery : IRequest<OperationResult<PagedResult<PriceHistoryListItemDto>>>
     {
+        public int Page { get; set; }
+        public int PageSize { get; set; }
     }
 }

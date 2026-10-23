@@ -1,14 +1,16 @@
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace KooliProjekt.Application.Features.OptionValues
 {
-    public class ListOptionValuesQueryHandler : IRequestHandler<ListOptionValuesQuery, IEnumerable<OptionValue>>
+    public class ListOptionValuesQueryHandler : IRequestHandler<ListOptionValuesQuery, OperationResult<PagedResult<OptionValueListItemDto>>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -17,11 +19,22 @@ namespace KooliProjekt.Application.Features.OptionValues
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<OptionValue>> Handle(ListOptionValuesQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<PagedResult<OptionValueListItemDto>>> Handle(ListOptionValuesQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.OptionValues.ToListAsync(cancellationToken);
+            var response = new OperationResult<PagedResult<OptionValueListItemDto>>();
 
-            return result;
+            response.Value = await _dbContext.OptionValues
+                .AsNoTracking()
+                .OrderByDescending(x => x.Id)
+                .Select(x => new OptionValueListItemDto
+                {
+                    Id = x.Id,
+                    ProductOptionName = _dbContext.ProductOptions.Where(t => t.Id == x.ProductOptionId).Select(t => t.Name).FirstOrDefault(),
+                    Value = x.Value,
+                })
+                .GetPagedAsync(request.Page, request.PageSize);
+
+            return response;
         }
     }
 }

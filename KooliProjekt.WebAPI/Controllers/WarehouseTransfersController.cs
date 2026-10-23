@@ -3,7 +3,6 @@ using KooliProjekt.Application.Features.WarehouseTransfers;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
-
 namespace KooliProjekt.WebAPI.Controllers
 {
     public class WarehouseTransfersController : ApiControllerBase
@@ -18,7 +17,7 @@ namespace KooliProjekt.WebAPI.Controllers
         [HttpGet("get/{id}")]
         public async Task<IActionResult> Get(int id)
         {
-            if(id <= 0)
+            if (id <= 0)
             {
                 return NotFound();
             }
@@ -26,21 +25,20 @@ namespace KooliProjekt.WebAPI.Controllers
             var query = new GetWarehouseTransferQuery { Id = id };
             var result = await _mediator.Send(query);
 
-            if(result == null)
-            {
-                return NotFound();
-            }
-
-            return Json(result);
+            return Result(result);
         }
 
-        [HttpGet("list")]
-        public async Task<IActionResult> List()
+        [HttpGet("list/{page}/{pageSize}")]
+        public async Task<IActionResult> List(int page, int pageSize)
         {
-            var query = new ListWarehouseTransfersQuery();
+            var query = new ListWarehouseTransfersQuery
+            {
+                Page = page,
+                PageSize = pageSize
+            };
             var result = await _mediator.Send(query);
 
-            return Json(result);
+            return Result(result);
         }
     }
 }

@@ -1,14 +1,16 @@
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace KooliProjekt.Application.Features.ReturnRequests
 {
-    public class ListReturnRequestsQueryHandler : IRequestHandler<ListReturnRequestsQuery, IEnumerable<ReturnRequest>>
+    public class ListReturnRequestsQueryHandler : IRequestHandler<ListReturnRequestsQuery, OperationResult<PagedResult<ReturnRequestListItemDto>>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -17,11 +19,23 @@ namespace KooliProjekt.Application.Features.ReturnRequests
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<ReturnRequest>> Handle(ListReturnRequestsQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<PagedResult<ReturnRequestListItemDto>>> Handle(ListReturnRequestsQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.ReturnRequests.ToListAsync(cancellationToken);
+            var response = new OperationResult<PagedResult<ReturnRequestListItemDto>>();
 
-            return result;
+            response.Value = await _dbContext.ReturnRequests
+                .AsNoTracking()
+                .OrderByDescending(x => x.Id)
+                .Select(x => new ReturnRequestListItemDto
+                {
+                    Id = x.Id,
+                    OrderNumber = _dbContext.Orders.Where(t => t.Id == x.OrderId).Select(t => t.OrderNumber).FirstOrDefault(),
+                    Status = x.Status,
+                    CreatedAt = x.CreatedAt,
+                })
+                .GetPagedAsync(request.Page, request.PageSize);
+
+            return response;
         }
     }
 }

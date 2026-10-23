@@ -13,7 +13,8 @@ namespace KooliProjekt.WebAPI.Controllers
             new JsonSerializerSettings
             {
                 ContractResolver = new CamelCasePropertyNamesContractResolver(),
-                NullValueHandling = NullValueHandling.Ignore                
+                NullValueHandling = NullValueHandling.Ignore,
+                Formatting = Formatting.Indented
             };
 
         protected IActionResult Result(OperationResult result)
@@ -22,10 +23,15 @@ namespace KooliProjekt.WebAPI.Controllers
 
             if (result.HasErrors)
             {
-                return BadRequest(serialized);
+                return new ContentResult
+                {
+                    StatusCode = 400,
+                    Content = serialized,
+                    ContentType = "application/json"
+                };
             }
 
-            return Ok(serialized);
+            return Content(serialized, "application/json");
         }
 
         protected IActionResult Result<T>(OperationResult<T> result)
@@ -34,7 +40,12 @@ namespace KooliProjekt.WebAPI.Controllers
 
             if (result.HasErrors)
             {
-                return BadRequest(serialized);
+                return new ContentResult
+                {
+                    StatusCode = 400,
+                    Content = serialized,
+                    ContentType = "application/json"
+                };
             }
 
             if (result.Value == null)
@@ -42,7 +53,7 @@ namespace KooliProjekt.WebAPI.Controllers
                 return NotFound();
             }
 
-            return Ok(serialized);
+            return Content(serialized, "application/json");
         }
     }
 }

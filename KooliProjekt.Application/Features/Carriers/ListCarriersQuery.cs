@@ -1,11 +1,13 @@
-using System.Collections.Generic;
-using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-
 
 namespace KooliProjekt.Application.Features.Carriers
 {
-    public class ListCarriersQuery : IRequest<IEnumerable<Carrier>>
+    public class ListCarriersQuery : IRequest<OperationResult<PagedResult<CarrierListItemDto>>>
     {
+        public int Page { get; set; }
+        public int PageSize { get; set; }
     }
 }

@@ -1,14 +1,16 @@
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace KooliProjekt.Application.Features.Currencies
 {
-    public class ListCurrenciesQueryHandler : IRequestHandler<ListCurrenciesQuery, IEnumerable<Currency>>
+    public class ListCurrenciesQueryHandler : IRequestHandler<ListCurrenciesQuery, OperationResult<PagedResult<CurrencyListItemDto>>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -17,11 +19,23 @@ namespace KooliProjekt.Application.Features.Currencies
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<Currency>> Handle(ListCurrenciesQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<PagedResult<CurrencyListItemDto>>> Handle(ListCurrenciesQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.Currencies.ToListAsync(cancellationToken);
+            var response = new OperationResult<PagedResult<CurrencyListItemDto>>();
 
-            return result;
+            response.Value = await _dbContext.Currencies
+                .AsNoTracking()
+                .OrderByDescending(x => x.Id)
+                .Select(x => new CurrencyListItemDto
+                {
+                    Id = x.Id,
+                    Code = x.Code,
+                    Name = x.Name,
+                    Symbol = x.Symbol,
+                })
+                .GetPagedAsync(request.Page, request.PageSize);
+
+            return response;
         }
     }
 }

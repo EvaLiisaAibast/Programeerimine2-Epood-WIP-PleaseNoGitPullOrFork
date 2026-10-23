@@ -1,12 +1,15 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-
+using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.Brands
 {
-    public class GetBrandQueryHandler : IRequestHandler<GetBrandQuery, Brand>
+    public class GetBrandQueryHandler : IRequestHandler<GetBrandQuery, OperationResult<BrandDto>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -15,11 +18,22 @@ namespace KooliProjekt.Application.Features.Brands
             _dbContext = dbContext;
         }
 
-        public async Task<Brand> Handle(GetBrandQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<BrandDto>> Handle(GetBrandQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.Brands.FindAsync(request.Id, cancellationToken);
+            var response = new OperationResult<BrandDto>();
 
-            return result;
+            response.Value = await _dbContext.Brands
+                .AsNoTracking()
+                .Where(x => x.Id == request.Id)
+                .Select(x => new BrandDto
+                {
+                    Id = x.Id,
+                    Name = x.Name,
+                    Website = x.Website,
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return response;
         }
     }
 }

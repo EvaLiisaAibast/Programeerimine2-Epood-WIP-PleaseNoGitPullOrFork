@@ -1,14 +1,16 @@
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using LoyaltyPointsEntity = KooliProjekt.Application.Data.LoyaltyPoints;
 
 namespace KooliProjekt.Application.Features.LoyaltyPoints
 {
-    public class ListLoyaltyPointsQueryHandler : IRequestHandler<ListLoyaltyPointsQuery, IEnumerable<LoyaltyPointsEntity>>
+    public class ListLoyaltyPointsQueryHandler : IRequestHandler<ListLoyaltyPointsQuery, OperationResult<PagedResult<LoyaltyPointsListItemDto>>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -17,11 +19,24 @@ namespace KooliProjekt.Application.Features.LoyaltyPoints
             _dbContext = dbContext;
         }
 
-        public async Task<IEnumerable<LoyaltyPointsEntity>> Handle(ListLoyaltyPointsQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<PagedResult<LoyaltyPointsListItemDto>>> Handle(ListLoyaltyPointsQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.LoyaltyPoints.ToListAsync(cancellationToken);
+            var response = new OperationResult<PagedResult<LoyaltyPointsListItemDto>>();
 
-            return result;
+            response.Value = await _dbContext.LoyaltyPoints
+                .AsNoTracking()
+                .OrderByDescending(x => x.Id)
+                .Select(x => new LoyaltyPointsListItemDto
+                {
+                    Id = x.Id,
+                    AccountId = x.AccountId,
+                    Points = x.Points,
+                    Reason = x.Reason,
+                    CreatedAt = x.CreatedAt,
+                })
+                .GetPagedAsync(request.Page, request.PageSize);
+
+            return response;
         }
     }
 }

@@ -1,12 +1,15 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-
+using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.StockMovements
 {
-    public class GetStockMovementQueryHandler : IRequestHandler<GetStockMovementQuery, StockMovement>
+    public class GetStockMovementQueryHandler : IRequestHandler<GetStockMovementQuery, OperationResult<StockMovementDto>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -15,11 +18,25 @@ namespace KooliProjekt.Application.Features.StockMovements
             _dbContext = dbContext;
         }
 
-        public async Task<StockMovement> Handle(GetStockMovementQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<StockMovementDto>> Handle(GetStockMovementQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.StockMovements.FindAsync(request.Id, cancellationToken);
+            var response = new OperationResult<StockMovementDto>();
 
-            return result;
+            response.Value = await _dbContext.StockMovements
+                .AsNoTracking()
+                .Where(x => x.Id == request.Id)
+                .Select(x => new StockMovementDto
+                {
+                    Id = x.Id,
+                    StockLevelId = x.StockLevelId,
+                    Type = x.Type,
+                    Quantity = x.Quantity,
+                    Reason = x.Reason,
+                    CreatedAt = x.CreatedAt,
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return response;
         }
     }
 }

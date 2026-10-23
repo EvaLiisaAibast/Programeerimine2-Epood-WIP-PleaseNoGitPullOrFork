@@ -1,11 +1,13 @@
-using System.Collections.Generic;
-using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-
 
 namespace KooliProjekt.Application.Features.Customers
 {
-    public class ListCustomersQuery : IRequest<IEnumerable<Customer>>
+    public class ListCustomersQuery : IRequest<OperationResult<PagedResult<CustomerListItemDto>>>
     {
+        public int Page { get; set; }
+        public int PageSize { get; set; }
     }
 }

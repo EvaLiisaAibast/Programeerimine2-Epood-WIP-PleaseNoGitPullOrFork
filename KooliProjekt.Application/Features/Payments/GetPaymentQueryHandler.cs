@@ -1,12 +1,15 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-
+using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.Payments
 {
-    public class GetPaymentQueryHandler : IRequestHandler<GetPaymentQuery, Payment>
+    public class GetPaymentQueryHandler : IRequestHandler<GetPaymentQuery, OperationResult<PaymentDto>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -15,11 +18,27 @@ namespace KooliProjekt.Application.Features.Payments
             _dbContext = dbContext;
         }
 
-        public async Task<Payment> Handle(GetPaymentQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<PaymentDto>> Handle(GetPaymentQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.Payments.FindAsync(request.Id, cancellationToken);
+            var response = new OperationResult<PaymentDto>();
 
-            return result;
+            response.Value = await _dbContext.Payments
+                .AsNoTracking()
+                .Where(x => x.Id == request.Id)
+                .Select(x => new PaymentDto
+                {
+                    Id = x.Id,
+                    OrderId = x.OrderId,
+                    OrderNumber = _dbContext.Orders.Where(t => t.Id == x.OrderId).Select(t => t.OrderNumber).FirstOrDefault(),
+                    Amount = x.Amount,
+                    Method = x.Method,
+                    Status = x.Status,
+                    TransactionReference = x.TransactionReference,
+                    CreatedAt = x.CreatedAt,
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return response;
         }
     }
 }

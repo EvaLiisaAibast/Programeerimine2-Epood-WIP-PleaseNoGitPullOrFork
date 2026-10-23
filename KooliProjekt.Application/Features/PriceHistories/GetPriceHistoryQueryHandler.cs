@@ -1,12 +1,15 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-
+using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.PriceHistories
 {
-    public class GetPriceHistoryQueryHandler : IRequestHandler<GetPriceHistoryQuery, PriceHistory>
+    public class GetPriceHistoryQueryHandler : IRequestHandler<GetPriceHistoryQuery, OperationResult<PriceHistoryDto>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -15,11 +18,25 @@ namespace KooliProjekt.Application.Features.PriceHistories
             _dbContext = dbContext;
         }
 
-        public async Task<PriceHistory> Handle(GetPriceHistoryQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<PriceHistoryDto>> Handle(GetPriceHistoryQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.PriceHistories.FindAsync(request.Id, cancellationToken);
+            var response = new OperationResult<PriceHistoryDto>();
 
-            return result;
+            response.Value = await _dbContext.PriceHistories
+                .AsNoTracking()
+                .Where(x => x.Id == request.Id)
+                .Select(x => new PriceHistoryDto
+                {
+                    Id = x.Id,
+                    VariantId = x.VariantId,
+                    VariantCode = _dbContext.ProductVariants.Where(t => t.Id == x.VariantId).Select(t => t.ProductCode).FirstOrDefault(),
+                    CurrentPrice = x.CurrentPrice,
+                    ValidFrom = x.ValidFrom,
+                    ValidTo = x.ValidTo,
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return response;
         }
     }
 }

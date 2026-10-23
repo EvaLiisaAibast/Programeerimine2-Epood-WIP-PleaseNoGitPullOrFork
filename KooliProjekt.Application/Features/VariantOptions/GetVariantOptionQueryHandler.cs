@@ -1,12 +1,15 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-
+using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.VariantOptions
 {
-    public class GetVariantOptionQueryHandler : IRequestHandler<GetVariantOptionQuery, VariantOption>
+    public class GetVariantOptionQueryHandler : IRequestHandler<GetVariantOptionQuery, OperationResult<VariantOptionDto>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -15,11 +18,24 @@ namespace KooliProjekt.Application.Features.VariantOptions
             _dbContext = dbContext;
         }
 
-        public async Task<VariantOption> Handle(GetVariantOptionQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<VariantOptionDto>> Handle(GetVariantOptionQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.VariantOptions.FindAsync(request.Id, cancellationToken);
+            var response = new OperationResult<VariantOptionDto>();
 
-            return result;
+            response.Value = await _dbContext.VariantOptions
+                .AsNoTracking()
+                .Where(x => x.Id == request.Id)
+                .Select(x => new VariantOptionDto
+                {
+                    Id = x.Id,
+                    VariantId = x.VariantId,
+                    VariantCode = _dbContext.ProductVariants.Where(t => t.Id == x.VariantId).Select(t => t.ProductCode).FirstOrDefault(),
+                    OptionValueId = x.OptionValueId,
+                    OptionValueName = _dbContext.OptionValues.Where(t => t.Id == x.OptionValueId).Select(t => t.Value).FirstOrDefault(),
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return response;
         }
     }
 }

@@ -1,10 +1,10 @@
-using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-using LoyaltyPointsEntity = KooliProjekt.Application.Data.LoyaltyPoints;
 
 namespace KooliProjekt.Application.Features.LoyaltyPoints
 {
-    public class GetLoyaltyPointsQuery : IRequest<LoyaltyPointsEntity>
+    public class GetLoyaltyPointsQuery : IRequest<OperationResult<LoyaltyPointsDto>>
     {
         public int Id { get; set; }
     }

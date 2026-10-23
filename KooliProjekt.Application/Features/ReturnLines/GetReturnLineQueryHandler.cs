@@ -1,12 +1,15 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-
+using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.ReturnLines
 {
-    public class GetReturnLineQueryHandler : IRequestHandler<GetReturnLineQuery, ReturnLine>
+    public class GetReturnLineQueryHandler : IRequestHandler<GetReturnLineQuery, OperationResult<ReturnLineDto>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -15,11 +18,24 @@ namespace KooliProjekt.Application.Features.ReturnLines
             _dbContext = dbContext;
         }
 
-        public async Task<ReturnLine> Handle(GetReturnLineQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<ReturnLineDto>> Handle(GetReturnLineQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.ReturnLines.FindAsync(request.Id, cancellationToken);
+            var response = new OperationResult<ReturnLineDto>();
 
-            return result;
+            response.Value = await _dbContext.ReturnLines
+                .AsNoTracking()
+                .Where(x => x.Id == request.Id)
+                .Select(x => new ReturnLineDto
+                {
+                    Id = x.Id,
+                    ReturnRequestId = x.ReturnRequestId,
+                    OrderLineId = x.OrderLineId,
+                    Quantity = x.Quantity,
+                    Reason = x.Reason,
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return response;
         }
     }
 }

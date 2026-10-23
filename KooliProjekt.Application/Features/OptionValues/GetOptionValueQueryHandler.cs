@@ -1,12 +1,15 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-
+using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.OptionValues
 {
-    public class GetOptionValueQueryHandler : IRequestHandler<GetOptionValueQuery, OptionValue>
+    public class GetOptionValueQueryHandler : IRequestHandler<GetOptionValueQuery, OperationResult<OptionValueDto>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -15,11 +18,23 @@ namespace KooliProjekt.Application.Features.OptionValues
             _dbContext = dbContext;
         }
 
-        public async Task<OptionValue> Handle(GetOptionValueQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<OptionValueDto>> Handle(GetOptionValueQuery request, CancellationToken cancellationToken)
         {
-            var result = await _dbContext.OptionValues.FindAsync(request.Id, cancellationToken);
+            var response = new OperationResult<OptionValueDto>();
 
-            return result;
+            response.Value = await _dbContext.OptionValues
+                .AsNoTracking()
+                .Where(x => x.Id == request.Id)
+                .Select(x => new OptionValueDto
+                {
+                    Id = x.Id,
+                    ProductOptionId = x.ProductOptionId,
+                    ProductOptionName = _dbContext.ProductOptions.Where(t => t.Id == x.ProductOptionId).Select(t => t.Name).FirstOrDefault(),
+                    Value = x.Value,
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            return response;
         }
     }
 }
