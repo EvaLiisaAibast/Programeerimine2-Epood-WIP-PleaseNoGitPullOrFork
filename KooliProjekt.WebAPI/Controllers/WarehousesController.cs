@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using KooliProjekt.Application.Dto;
 using KooliProjekt.Application.Features.Warehouses;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
@@ -37,6 +38,29 @@ namespace KooliProjekt.WebAPI.Controllers
                 PageSize = pageSize
             };
             var result = await _mediator.Send(query);
+
+            return Result(result);
+        }
+
+        [HttpPost("save")]
+        public async Task<IActionResult> Save([FromBody] WarehouseDto data)
+        {
+            var command = new SaveWarehouseCommand { Data = data };
+            var result = await _mediator.Send(command);
+
+            return Result(result);
+        }
+
+        [HttpDelete("delete/{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
+            var command = new DeleteWarehouseCommand { Id = id };
+            var result = await _mediator.Send(command);
 
             return Result(result);
         }

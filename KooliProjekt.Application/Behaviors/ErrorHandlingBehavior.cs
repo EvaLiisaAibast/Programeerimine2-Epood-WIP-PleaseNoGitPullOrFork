@@ -28,11 +28,11 @@ namespace KooliProjekt.Application.Behaviors
                 Debug.WriteLine(ex.Message);
                 Debug.WriteLine(ex.StackTrace);
 
-                _logger.LogError(ex.Message, ex);
+                _logger.LogError(ex, "Request {RequestName} failed", typeof(TRequest).Name);
 
                 var response = new TResponse();
 
-                response.AddError(ex.ToString());
+                response.AddError("Andmete töötlemine ebaõnnestus. Palun kontrolli sisestatud andmeid ja proovi uuesti.");
 
                 return response;
             }

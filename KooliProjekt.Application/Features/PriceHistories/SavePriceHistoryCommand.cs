@@ -1,0 +1,11 @@
+using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Infrastructure.Results;
+using MediatR;
+
+namespace KooliProjekt.Application.Features.PriceHistories
+{
+    public class SavePriceHistoryCommand : IRequest<OperationResult<int>>
+    {
+        public PriceHistoryDto Data { get; set; }
+    }
+}
