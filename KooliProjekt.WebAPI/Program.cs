@@ -1,10 +1,13 @@
+using System.IO;
 using FluentValidation;
 using KooliProjekt.Application.Behaviors;
 using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Infrastructure.Files;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 
 namespace KooliProjekt.WebAPI
@@ -26,6 +29,10 @@ namespace KooliProjekt.WebAPI
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            var filesRoot = builder.Configuration["FilesRoot"];
+            Directory.CreateDirectory(filesRoot);
+            builder.Services.AddSingleton<IFileClient>(new LocalFileClient(filesRoot));
+
             var applicationAssembly = typeof(ErrorHandlingBehavior<,>).Assembly;
             builder.Services.AddValidatorsFromAssembly(applicationAssembly);
             builder.Services.AddMediatR(config =>
@@ -37,6 +44,13 @@ namespace KooliProjekt.WebAPI
             });
 
             var app = builder.Build();
+
+            app.UseStaticFiles();
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(Path.GetFullPath(filesRoot)),
+                RequestPath = "/files"
+            });
 
             if (app.Environment.IsDevelopment())
             {

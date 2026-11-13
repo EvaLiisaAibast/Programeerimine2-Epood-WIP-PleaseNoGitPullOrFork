@@ -463,7 +463,7 @@ namespace KooliProjekt.Application.Data
                 images.Add(new ProductImage
                 {
                     ProductId = (i % 36) + 1,
-                    Url = "https://cdn.epood.ee/tooted/" + ((i % 36) + 1) + "-" + ((i / 36) + 1) + ".jpg",
+                    Url = "/images/tooted/" + ((i % 36) + 1) + ".jpg",
                     AltText = "Toode " + ((i % 36) + 1) + " pilt " + ((i % 3) + 1),
                     SortOrder = (i % 3) + 1,
                     IsMain = i % 3 == 0
